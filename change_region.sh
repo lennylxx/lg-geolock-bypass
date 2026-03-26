@@ -68,7 +68,7 @@ setTimeout(function(){
 setTimeout(function(){process.exit(1);},5000);'
 }
 
-# Update configd overrides and settings DB to match US region.
+# Update configd overrides and settings DB to match US region. (VERIFIED)
 # configd overrides persist through reboot.
 # Settings DB stores user-facing values like country name.
 set_configd_us() {
@@ -80,6 +80,36 @@ h.call("luna://com.webos.service.config/setConfigs",
 setTimeout(function(){
   h.call("luna://com.webos.service.settings/setSystemSettings",
     JSON.stringify({category:"option",settings:{country:"USA",smartServiceCountryCode3:"USA",localeCountryGroup:"langSelUS"}}))
+  .on("response",function(m){console.log("[+] settings: "+m.payload());process.exit(0);});
+},500);
+setTimeout(function(){process.exit(1);},5000);'
+}
+
+# Update configd overrides and settings DB for any area code. (UNVERIFIED for non-US)
+# Decodes the area code to get languageCountry/hwSettingGroup names,
+# then sets configd (persists through reboot) and settings DB.
+# NOTE: Only US (22282) has been fully tested. Country/langGroup mappings
+# for other regions are best-effort based on firmware analysis.
+set_configd() {
+    AREA="$1"
+    node -e '
+var area=parseInt("'"$AREA"'");
+var LC=["NORDIC","NON NORDIC","EAST EU","WEST EU","ETC EU","AJ","JA","IL","TW","CO","PA","CN","HK","KR","US","CA","MX","HN","BR","CL","PE","AR","EC","JP","EU","IR","PH","BW","CS"];
+var HW=["EU","AJ JA IL","TW CO","CN HK","KR","US","SA","JP"];
+var COUNTRY={US:"USA",CA:"CAN",MX:"MEX",BR:"BRA",AR:"ARG",CL:"CHL",PE:"PER",CO:"COL",EC:"ECU",HN:"HND",PA:"PAN",CN:"CHN",HK:"HKG",TW:"TWN",KR:"KOR",JP:"JPN",PH:"PHL",IL:"ISR",EU:"DEU",AJ:"AUS",JA:"ZAF"};
+var LANGGRP={US:"langSelUS",CA:"langSelUS",MX:"langSelUS",BR:"langSelBR",CN:"langSelCN",HK:"langSelHK",TW:"langSelTW",KR:"langSelKR",JP:"langSelJP",EU:"langSelEU"};
+var ci=area&0x7F, lc=(area>>7)&0x1F, hw=(area>>12)&0xF;
+var lcName=LC[lc]||"US", hwName=HW[hw]||"US";
+var cc=COUNTRY[lcName]||lcName;
+var lg=LANGGRP[lcName]||"langSel"+lcName;
+console.log("[+] Decoded: ci="+ci+" lang="+lcName+" hw="+hwName+" country="+cc);
+var pb=require("palmbus"),h=new pb.Handle("",true);
+h.call("luna://com.webos.service.config/setConfigs",
+  JSON.stringify({configs:{"tv.model.languageCountrySel":lcName,"tv.model.hwSettingGroup":hwName,"tv.model.continentIndx":ci}}))
+.on("response",function(m){console.log("[+] configd: "+m.payload());});
+setTimeout(function(){
+  h.call("luna://com.webos.service.settings/setSystemSettings",
+    JSON.stringify({category:"option",settings:{country:cc,smartServiceCountryCode3:cc,localeCountryGroup:lg}}))
   .on("response",function(m){console.log("[+] settings: "+m.payload());process.exit(0);});
 },500);
 setTimeout(function(){process.exit(1);},5000);'
@@ -151,10 +181,15 @@ case "$1" in
         echo "Setting area option to $1..."
         write_area "$1"
         echo ""
-        echo "Setting configd and settings to US..."
-        set_configd_us
+        if [ "$1" = "22282" ]; then
+            echo "Setting configd and settings to US (verified)..."
+            set_configd_us
+        else
+            echo "Setting configd and settings (best-effort mapping)..."
+            set_configd "$1"
+        fi
         echo ""
         echo "Done. Run '$0 reboot' or use the remote to reboot."
-        echo "After reboot, set country to United States in Settings if prompted."
+        echo "After reboot, select your country (United States) in Settings if prompted."
         ;;
 esac

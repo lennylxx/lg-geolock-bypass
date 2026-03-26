@@ -32,7 +32,8 @@ The `factorymanager` service enforces an internal permission check (geolock) tha
 
 | Region | contiArea2All | continentIdx | languageCountry | hwSettingGroup |
 |--------|--------------|--------------|-----------------|----------------|
-| EU/KR | 19461 | 5 | 24 (EU) | 4 (KR) |
+| EU (KR hw) | 19461 | 5 | 24 (EU) | 4 (KR) |
+| EU (EU hw) | 3122 | 50 | 24 (EU) | 0 (EU) |
 | US | 22282 | 10 | 14 (US) | 5 (US) |
 
 ### Language/Country Values
@@ -67,9 +68,10 @@ These codes all use `hwSettingGroup=4 (KR)`, suitable for KR-hardware TVs:
 | PH | 15670 | 54 | 26 (PH) | 3 (CN HK) |
 | TW | 17432 | 24 | 8 (TW) | 4 (KR) |
 | **US** | **22282** | **10** | **14 (US)** | **5 (US)** |
-| EU/KR | 19461 | 5 | 24 (EU) | 4 (KR) |
+| EU (KR hw) | 19461 | 5 | 24 (EU) | 4 (KR) |
+| EU (EU hw) | 3122 | 50 | 24 (EU) | 0 (EU) |
 
-> Note: The US code (22282) uses `hwSettingGroup=5 (US)` — the proper US hardware group. All others in this list use KR hardware group.
+> Note: The US code (22282) uses `hwSettingGroup=5 (US)` — the proper US hardware group. Most others in this list use KR hardware group.
 
 ### Calculate Your Own
 
@@ -112,6 +114,8 @@ hwSettingGroup   = (contiArea2All >> 12) & 0xF
 3. Open the Developer Mode app and sign in with your LG account
 4. Enable **Dev Mode Status** (the TV will reboot)
 5. After reboot, re-open Developer Mode and enable **Key Server**
+
+> **If your TV is stuck in EU:** The LG Content Store requires a region-matching LG account to download apps. You may need to temporarily set your TV's country to a specific EU country (e.g., United Kingdom) in Settings, agree to the user agreement, then register a new LG account with a new email address to download the Developer Mode app. Once installed, you can sign into the Developer Mode app with either your new EU or original US LG account.
 
 ### 2. Download the SSH Key
 
@@ -167,7 +171,7 @@ sh /tmp/change_region.sh verify
 sh /tmp/change_region.sh reboot
 ```
 
-3. After reboot, set country to United States in **Settings > General > System > Location** if prompted.
+3. After reboot, select your country (United States) in **Settings > General > System > Location** if prompted.
 
 > **Note:** The script and pmloglib stub live in `/tmp`, which is cleared on every reboot. You'll need to copy the script again after a reboot if you want to re-run it.
 
@@ -233,7 +237,7 @@ You can visually confirm the area code using [ColorControl](https://github.com/M
 
 ## Disclaimer
 
-This is for educational and personal use. Modifying TV firmware settings may void your warranty. Use at your own risk.
+This is for educational and personal use. Modifying TV firmware settings may void your warranty. The author is not responsible for any damages to your TV. Use at your own risk.
 
 ## Credits
 
