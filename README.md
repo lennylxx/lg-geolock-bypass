@@ -6,103 +6,15 @@ Change the region/area code on LG webOS TVs by writing directly to NVRAM via the
 
 ## Why This Exists
 
-> **WARNING:** If your TV is currently working fine in your region, **do NOT touch the area option in the EZ-Adjust service menu**. Changing it is easy — changing it back is not. The factorymanager enforces a region lock that prevents reverting the area code, even through the same menu you used to change it. Think twice before you enter EZ-Adjust.
+> **WARNING:** If your TV is currently working fine in your region, **do NOT touch the area option in the EZ-Adjust service menu**. Changing it is easy — changing it back is not.
 
-This project was born out of accidentally changing the area option to EU in the EZ-Adjust service menu on a US TV. The TV became geolocked to EU — different app availability, broadcast standards, and region-specific features. The EZ-Adjust menu that allowed the change refused to change it back due to a hardcoded permission check in the `factorymanager` binary.
+This project was born out of accidentally changing the area option to EU in the EZ-Adjust service menu on a US TV. The `factorymanager` binary enforces a region lock (geolock) that prevents reverting the area code — even through the same EZ-Adjust menu that was used to change it. This primarily affects the **EU region** — switching to/from other regions like China works fine, but once you land on EU, you're stuck. The TV became geolocked with different app availability, broadcast standards, and region-specific features.
 
-## Background
+Previously, the only known solution was binary-patching the factorymanager, which requires root access. **This method bypasses factorymanager entirely** by writing to NVRAM through the `com.webos.service.lowlevelstorage` service, which has no such restriction. No root required.
 
-LG TVs store a 16-bit packed "area option" value (`contiArea2All`) in NVRAM that determines the TV's region. This controls country-specific features, broadcast standards, and app availability.
+## Usage
 
-The `factorymanager` service enforces an internal permission check (geolock) that prevents changing the area option back — even through the EZ-Adjust service menu that was used to set it in the first place. This geolock primarily affects the **EU region** — in testing, switching to/from other regions like China worked fine through EZ-Adjust. But once you land on EU, you're stuck. Previously, the only known solution was binary-patching the factorymanager, which requires root access.
-
-**This method bypasses factorymanager entirely** by writing to NVRAM through the `com.webos.service.lowlevelstorage` service, which has no such restriction. No root required.
-
-## Area Option Encoding
-
-`contiArea2All` is a 16-bit packed field:
-
-| Bits | Field | Description |
-|------|-------|-------------|
-| 0-6 | `nContinentIdx` | Continent index (7 bits) |
-| 7-11 | `eLanguageCountry` | Language/country selection (5 bits) |
-| 12-15 | `eHWSettingGroup` | Hardware setting group (4 bits) |
-
-### Common Values
-
-| Region | contiArea2All | continentIdx | languageCountry | hwSettingGroup |
-|--------|--------------|--------------|-----------------|----------------|
-| EU (KR hw) | 19461 | 5 | 24 (EU) | 4 (KR) |
-| EU (EU hw) | 3122 | 50 | 24 (EU) | 0 (EU) |
-| US | 22282 | 10 | 14 (US) | 5 (US) |
-
-### Language/Country Values
-0=NORDIC, 1=NON NORDIC, 2=EAST EU, 3=WEST EU, 4=ETC EU, 5=AJ, 6=JA, 7=IL, 8=TW, 9=CO, 10=PA, 11=CN, 12=HK, 13=KR, **14=US**, 15=CA, 16=MX, 17=HN, 18=BR, 19=CL, 20=PE, 21=AR, 22=EC, 23=JP, **24=EU**, 25=IR, 26=PH, 27=BW, 28=CS
-
-### HW Setting Groups
-0=EU, 1=AJ JA IL, 2=TW CO, 3=CN HK, 4=KR, **5=US**, 6=SA, 7=JP
-
-### Full Code List (KR hardware base)
-
-These codes all use `hwSettingGroup=4 (KR)`, suitable for KR-hardware TVs:
-
-| Region | Code | continentIdx | languageCountry | hwSettingGroup |
-|--------|------|--------------|-----------------|----------------|
-| AJ | 17083 | 59 | 5 (AJ) | 4 (KR) |
-| AR | 19123 | 51 | 21 (AR) | 4 (KR) |
-| BR | 18789 | 101 | 18 (BR) | 4 (KR) |
-| CA | 18362 | 58 | 15 (CA) | 4 (KR) |
-| CL | 18876 | 60 | 19 (CL) | 4 (KR) |
-| CN | 17816 | 24 | 11 (CN) | 4 (KR) |
-| CO | 17560 | 24 | 9 (CO) | 4 (KR) |
-| EC | 19251 | 51 | 22 (EC) | 4 (KR) |
-| HK | 17930 | 10 | 12 (HK) | 4 (KR) |
-| HK | 17935 | 15 | 12 (HK) | 4 (KR) |
-| HN | 18584 | 24 | 17 (HN) | 4 (KR) |
-| HN | 18618 | 58 | 17 (HN) | 4 (KR) |
-| JA | 17211 | 59 | 6 (JA) | 4 (KR) |
-| JP | 19345 | 17 | 23 (JP) | 4 (KR) |
-| MX | 18456 | 24 | 16 (MX) | 4 (KR) |
-| PA | 17679 | 15 | 10 (PA) | 4 (KR) |
-| PE | 19033 | 89 | 20 (PE) | 4 (KR) |
-| PH | 15670 | 54 | 26 (PH) | 3 (CN HK) |
-| TW | 17432 | 24 | 8 (TW) | 4 (KR) |
-| **US** | **22282** | **10** | **14 (US)** | **5 (US)** |
-| EU (KR hw) | 19461 | 5 | 24 (EU) | 4 (KR) |
-| EU (EU hw) | 3122 | 50 | 24 (EU) | 0 (EU) |
-
-> Note: The US code (22282) uses `hwSettingGroup=5 (US)` — the proper US hardware group. Most others in this list use KR hardware group.
-
-### Calculate Your Own
-
-Use the included `calc_area.py` utility:
-
-```bash
-# Decode an area code
-python3 calc_area.py 22282
-# Area option: 22282
-#   continentIdx:     10
-#   languageCountry:  14 (US)
-#   hwSettingGroup:   5 (US)
-
-# Encode from fields
-python3 calc_area.py 10 14 5
-# Area option: 22282
-```
-
-Or calculate manually:
-
-```python
-# Encode
-contiArea2All = continentIdx | (languageCountry << 7) | (hwSettingGroup << 12)
-
-# Decode
-continentIdx     = contiArea2All & 0x7F
-languageCountry  = (contiArea2All >> 7) & 0x1F
-hwSettingGroup   = (contiArea2All >> 12) & 0xF
-```
-
-## Prerequisites
+### Prerequisites
 
 - TV and computer on the same network
 - LG Developer Mode enabled on the TV
@@ -147,11 +59,9 @@ ssh -i lg_private.key \
 
 > **Note:** You will be prompted for a passphrase — this is shown on the **Developer Mode app** screen on your TV. It is **case-sensitive**. The `-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa` flags are required because the TV uses the legacy `ssh-rsa` algorithm that newer SSH clients disable by default.
 
-## Usage
+### 4. Change Region
 
-Once SSH'd into the TV, run the following commands:
-
-1. **Run the script on the TV** (via SSH):
+Once SSH'd into the TV:
 
 ```bash
 # Run on TV — read current area option
@@ -164,16 +74,173 @@ sh /tmp/change_region.sh 22282
 sh /tmp/change_region.sh verify
 ```
 
-2. **Reboot the TV** (via SSH):
+Reboot the TV:
 
 ```bash
 # Run on TV
 sh /tmp/change_region.sh reboot
 ```
 
-3. After reboot, select your country (United States) in **Settings > General > System > Location** if prompted.
+After reboot, select your country (United States) in **Settings > General > System > Location** if prompted.
 
 > **Note:** The script and pmloglib stub live in `/tmp`, which is cleared on every reboot. You'll need to copy the script again after a reboot if you want to re-run it.
+
+### Verify via EZ-Adjust (optional)
+
+You can visually confirm the area code using [ColorControl](https://github.com/Maassoft/ColorControl), a free virtual service remote:
+
+1. Open ColorControl and connect to your TV
+2. Send the **IN-START** (or **EZ-Adjust**) service remote command to open the service menu
+3. Navigate to **Option** > **Area Option**
+4. The area code should now show **22282** (US)
+
+### Changing to Other Regions
+
+To change to a different region, replace the area code. For example, to change to China:
+
+```bash
+# Run on TV — change to China
+sh /tmp/change_region.sh 13741
+```
+
+See the [Known Area Codes](#known-area-codes) table for other region codes.
+
+## Troubleshooting
+
+### TV shows "Others" as country after reboot
+This is normal on first reboot. Go to Settings > General > System > Location and manually select United States. The NVRAM value is already correct — the settings UI just needs to be re-synced once.
+
+### SSH connection refused
+- Ensure developer mode is enabled on the TV
+- Use port 9922, not 22
+- Add `-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa` flags
+
+### "Cannot find module 'pmloglib'" error
+Recreate the stub — it's stored in `/tmp` which is cleared on reboot:
+```bash
+sh /tmp/change_region.sh setup
+```
+
+## Known Area Codes
+
+Some regions have multiple codes with different hardware setting groups. If unsure, pick the one that matches your TV's original region (e.g., a US-bought TV should use hwSettingGroup 5/US).
+
+| Name | Region | Code | continentIdx | languageCountry | hwSettingGroup |
+|------|--------|------|--------------|-----------------|----------------|
+| Argentina | AR | 19123 | 51 | 21 (AR) | 4 (KR) |
+| Brazil | BR | 18789 | 101 | 18 (BR) | 4 (KR) |
+| Canada | CA | 18362 | 58 | 15 (CA) | 4 (KR) |
+| Chile | CL | 18876 | 60 | 19 (CL) | 4 (KR) |
+| China | CN | 13741 | 45 | 11 (CN) | 3 (CN HK) |
+| China | CN | 17816 | 24 | 11 (CN) | 4 (KR) |
+| Colombia | CO | 17560 | 24 | 9 (CO) | 4 (KR) |
+| Ecuador | EC | 19251 | 51 | 22 (EC) | 4 (KR) |
+| European Union (EU hw) | EU | 3122 | 50 | 24 (EU) | 0 (EU) |
+| **European Union (KR hw)** | **EU** | **19461** | **5** | **24 (EU)** | **4 (KR)** |
+| Honduras | HN | 18584 | 24 | 17 (HN) | 4 (KR) |
+| Honduras | HN | 18618 | 58 | 17 (HN) | 4 (KR) |
+| Hong Kong | HK | 13869 | 45 | 12 (HK) | 3 (CN HK) |
+| Hong Kong | HK | 17930 | 10 | 12 (HK) | 4 (KR) |
+| Hong Kong | HK | 17935 | 15 | 12 (HK) | 4 (KR) |
+| Japan | JP | 19345 | 17 | 23 (JP) | 4 (KR) |
+| Mexico | MX | 18456 | 24 | 16 (MX) | 4 (KR) |
+| Middle East Asia & Africa | JA | 17211 | 59 | 6 (JA) | 4 (KR) |
+| Panama | PA | 17679 | 15 | 10 (PA) | 4 (KR) |
+| Peru | PE | 19033 | 89 | 20 (PE) | 4 (KR) |
+| Philippines | PH | 15670 | 54 | 26 (PH) | 3 (CN HK) |
+| Singapore | AJ | 4837 | 101 | 5 (AJ) | 1 (AJ JA IL) |
+| Taiwan | TW | 17432 | 24 | 8 (TW) | 4 (KR) |
+| **United States** | **US** | **22282** | **10** | **14 (US)** | **5 (US)** |
+
+> Note: The US code (22282) uses `hwSettingGroup=5 (US)` — the proper US hardware group. Most others in this list use KR hardware group.
+
+## Area Option Encoding
+
+LG TVs store a 16-bit packed "area option" value (`contiArea2All`) in NVRAM that determines the TV's region. This controls country-specific features, broadcast standards, and app availability.
+
+| Bits | Field | Description |
+|------|-------|-------------|
+| 0-6 | `nContinentIdx` | Continent index (7 bits) |
+| 7-11 | `eLanguageCountry` | Language/country selection (5 bits) |
+| 12-15 | `eHWSettingGroup` | Hardware setting group (4 bits) |
+
+### Calculate Your Own
+
+Use the included `calc_area.py` utility:
+
+```bash
+# Decode an area code
+python3 calc_area.py 22282
+# Area option: 22282
+#   continentIdx:     10
+#   languageCountry:  14 (US)
+#   hwSettingGroup:   5 (US)
+
+# Encode from fields
+python3 calc_area.py 10 14 5
+# Area option: 22282
+```
+
+See [Language/Country Values](#languagecountry-values-elanguagecountry) and [HW Setting Groups](#hw-setting-groups-ehwsettinggroup) below for valid field values.
+
+Or calculate manually:
+
+```python
+# Encode
+contiArea2All = continentIdx | (languageCountry << 7) | (hwSettingGroup << 12)
+
+# Decode
+continentIdx     = contiArea2All & 0x7F
+languageCountry  = (contiArea2All >> 7) & 0x1F
+hwSettingGroup   = (contiArea2All >> 12) & 0xF
+```
+
+### Language/Country Values (`eLanguageCountry`)
+
+| Value | Code | Name | Config Group | Default Country | Countries (Settings UI) |
+|-------|------|------|--------------|-----------------|------------------------|
+| 0 | NORDIC | Nordic | EU | — | SWE (Sweden), DNK (Denmark), NOR (Norway), FIN (Finland) |
+| 1 | NON NORDIC | Non-Nordic | EU | — | ALB (Albania), AUT (Austria), BLR (Belarus), BEL (Belgium), BIH (Bosnia), BGR (Bulgaria), HRV (Croatia), CZE (Czech), EST (Estonia), FRA (France), DEU (Germany), GRC (Greece), HUN (Hungary), IRL (Ireland), ITA (Italy), KAZ (Kazakhstan), LVA (Latvia), LTU (Lithuania), LUX (Luxembourg), NLD (Netherlands), POL (Poland), PRT (Portugal), ROU (Romania), RUS (Russia), SRB (Serbia), SVK (Slovakia), SVN (Slovenia), ESP (Spain), CHE (Switzerland), TUR (Türkiye), GBR (UK), UKR (Ukraine) |
+| 2 | EAST EU | East EU | EU | — | ALB (Albania), BIH (Bosnia), BGR (Bulgaria), HRV (Croatia), CZE (Czech), EST (Estonia), HUN (Hungary), LVA (Latvia), LTU (Lithuania), POL (Poland), ROU (Romania), SRB (Serbia), SVK (Slovakia) |
+| 3 | WEST EU | West EU | EU | GBR (UK) | AUT (Austria), BEL (Belgium), FRA (France), DEU (Germany), MKD (Macedonia), GRC (Greece), IRL (Ireland), ITA (Italy), LUX (Luxembourg), NLD (Netherlands), PRT (Portugal), SVN (Slovenia), ESP (Spain), CHE (Switzerland), GBR (UK) |
+| 4 | ETC EU | Etc EU | EU | — | BLR (Belarus), KAZ (Kazakhstan), MNG (Mongolia), RUS (Russia), TUR (Türkiye), UKR (Ukraine) |
+| 5 | AJ | Asia | AJ | AUS (Australia) | AUS (Australia), KHM (Cambodia), IND (India), IDN (Indonesia), MYS (Malaysia), MMR (Myanmar), NZL (New Zealand), PHL (Philippines), SGP (Singapore), LKA (Sri Lanka), THA (Thailand), VNM (Vietnam) |
+| 6 | JA | Middle East Asia & Africa | JA | ZAF (South Africa) | BHR (Bahrain), CMR (Cameroon), DZA (Algeria), GHA (Ghana), IRQ (Iraq), JOR (Jordan), KEN (Kenya), KWT (Kuwait), LBN (Lebanon), LBY (Libya), MWI (Malawi), MUS (Mauritius), MAR (Morocco), NAM (Namibia), NGA (Nigeria), OMN (Oman), QAT (Qatar), SAU (Saudi Arabia), ZAF (South Africa), TUN (Tunisia), UGA (Uganda), ARE (UAE), YEM (Yemen), ZMB (Zambia), ZWE (Zimbabwe) |
+| 7 | IL | Israel | IL | ISR (Israel) | ISR (Israel) |
+| 8 | TW | Taiwan | TW | TWN (Taiwan) | TWN (Taiwan) |
+| 9 | CO | Colombia | TW | COL (Colombia) | COL (Colombia) |
+| 10 | PA | Panama | BR | HND (Honduras) | HND (Honduras), MEX (Mexico), PAN (Panama) |
+| 11 | CN | China | CN | CHN (China) | CHN (China) |
+| 12 | HK | Hong Kong | HK | HKG (Hong Kong) | HKG (Hong Kong) |
+| 13 | KR | Korea | KR | KOR (South Korea) | KOR (South Korea) |
+| **14** | **US** | **United States** | **US** | **USA (United States)** | **USA (United States)** |
+| 15 | CA | Canada | US | CAN (Canada) | CAN (Canada) |
+| 16 | MX | Mexico | US | MEX (Mexico) | MEX (Mexico) |
+| 17 | HN | Honduras | BR | HND (Honduras) | HND (Honduras) |
+| 18 | BR | Brazil/South America | BR | BRA (Brazil) | BRA (Brazil) |
+| 19 | CL | Chile | BR | CHL (Chile) | CHL (Chile) |
+| 20 | PE | Peru | BR | PER (Peru) | PER (Peru) |
+| 21 | AR | Argentina | BR | ARG (Argentina) | ARG (Argentina) |
+| 22 | EC | Ecuador | BR | ECU (Ecuador) | ECU (Ecuador) |
+| 23 | JP | Japan | JP | JPN (Japan) | JPN (Japan) |
+| **24** | **EU** | **EU** | **EU** | **GBR (UK)** | **ALB (Albania), AUT (Austria), BEL (Belgium), BIH (Bosnia), BGR (Bulgaria), HRV (Croatia), CZE (Czech), DNK (Denmark), EST (Estonia), FIN (Finland), FRA (France), DEU (Germany), GRC (Greece), HUN (Hungary), ISL (Iceland), IRL (Ireland), ITA (Italy), LVA (Latvia), LTU (Lithuania), LUX (Luxembourg), MKD (Macedonia), NLD (Netherlands), NOR (Norway), POL (Poland), PRT (Portugal), ROU (Romania), SRB (Serbia), SVK (Slovakia), SVN (Slovenia), ESP (Spain), SWE (Sweden), CHE (Switzerland), TUR (Türkiye), GBR (UK)** |
+| 25 | IR | Iran | JA | IRN (Iran) | IRN (Iran) |
+| 26 | PH | Philippines | BR | PHL (Philippines) | PHL (Philippines) |
+| 27 | BW | Botswana | BR | BWA (Botswana) | BWA (Botswana) |
+| 28 | CS | CIS | CS | RUS (Russia) | BLR (Belarus), KAZ (Kazakhstan), UZB (Uzbekistan), MNG (Mongolia), RUS (Russia), UKR (Ukraine) |
+
+### HW Setting Groups (`eHWSettingGroup`)
+
+| Value | Code | Name |
+|-------|------|------|
+| 0 | EU | Europe |
+| 1 | AJ JA IL | Asia / Middle East Asia & Africa / Israel |
+| 2 | TW CO | Taiwan / Colombia |
+| 3 | CN HK | China / Hong Kong |
+| 4 | KR | South Korea |
+| **5** | **US** | **United States** |
+| 6 | SA | South America |
+| 7 | JP | Japan |
 
 ## How It Works
 
@@ -204,36 +271,6 @@ The prisoner shell on webOS is BusyBox-based with several restrictions:
 - **`strings` command** cannot access binaries in `/usr/sbin/` (not readable by prisoner).
 - **BusyBox `grep`** doesn't support `\|` alternation — use `grep -E 'a|b'` instead.
 - **`/tmp` is tmpfs** — everything in `/tmp` is lost on reboot, including the script and pmloglib stub.
-
-## Troubleshooting
-
-### TV shows "Others" as country after reboot
-This is normal on first reboot. Go to Settings > General > System > Location and manually select United States. The NVRAM value is already correct — the settings UI just needs to be re-synced once.
-
-### SSH connection refused
-- Ensure developer mode is enabled on the TV
-- Use port 9922, not 22
-- Add `-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa` flags
-
-### "Cannot find module 'pmloglib'" error
-Recreate the stub — it's stored in `/tmp` which is cleared on reboot:
-```bash
-sh /tmp/change_region.sh setup
-```
-
-### Verify the change persisted
-```bash
-sh /tmp/change_region.sh verify
-```
-
-### Verify via EZ-Adjust (optional)
-
-You can visually confirm the area code using [ColorControl](https://github.com/Maassoft/ColorControl), a free virtual service remote:
-
-1. Open ColorControl and connect to your TV
-2. Send the **IN-START** (or **EZ-Adjust**) service remote command to open the service menu
-3. Navigate to **Option** > **Area Option**
-4. The area code should now show **22282** (US)
 
 ## Disclaimer
 
