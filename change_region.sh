@@ -5,22 +5,36 @@
 #
 # Tested on: LG OLED77C5PUA, webOS 10.3.0, firmware 33.30.97
 
-NODE_PATH=/tmp/node_modules:/usr/lib/node_modules:/usr/lib/nodejs
+NODE_PATH=/usr/lib/node_modules:/usr/lib/nodejs
 export NODE_PATH
 
 # The webos-service node module requires pmloglib, which isn't available
-# in the prisoner shell. This stub satisfies the dependency.
-# Must be recreated after every reboot since /tmp is tmpfs.
-setup_stub() {
-    mkdir -p /tmp/node_modules
-    echo 'function C(){return{log:function(){},info:function(){},warning:function(){},error:function(){}};}module.exports={log:function(){},info:function(){},warning:function(){},error:function(){},Console:C,Context:function(){return{log:function(){},info:function(){},warning:function(){},error:function(){}};}};' > /tmp/node_modules/pmloglib.js
-    echo "[+] pmloglib stub created"
-}
+# in the prisoner shell. This in-memory stub satisfies the dependency
+# without creating a file.
+NODE_BOOTSTRAP='
+var Module=require("module"),originalLoad=Module._load;
+function noop(){}
+function logger(){return{log:noop,info:noop,warning:noop,error:noop};}
+var pmloglib={log:noop,info:noop,warning:noop,error:noop,Console:logger,Context:logger};
+Module._load=function(request,parent,isMain){
+  if(request==="pmloglib")return pmloglib;
+  return originalLoad.apply(this,arguments);
+};
+function createHandle(pb){
+  try{return new pb.Handle("");}
+  catch(singleArgumentError){
+    try{return new pb.Handle("",true);}
+    catch(twoArgumentError){
+      throw new Error("Unable to create palmbus Handle; single argument: "+
+        singleArgumentError.message+"; two arguments: "+twoArgumentError.message);
+    }
+  }
+}'
 
 # Read contiArea2All from NVRAM via lowlevelstorage and decode the bit fields
 read_area() {
-    node -e '
-var pb=require("palmbus"),h=new pb.Handle("",true);
+    node -e "$NODE_BOOTSTRAP"'
+var pb=require("palmbus"),h=createHandle(pb);
 h.call("luna://com.webos.service.lowlevelstorage/getData",
   JSON.stringify({dbgroups:[{dbid:"factory",items:["contiArea2All"]}]}))
 .on("response",function(m){
@@ -43,9 +57,9 @@ setTimeout(function(){process.exit(1);},5000);'
 # This bypasses factorymanager's internal permission check (geolock)
 write_area() {
     AREA="$1"
-    node -e '
+    node -e "$NODE_BOOTSTRAP"'
 var area="'"$AREA"'";
-var pb=require("palmbus"),h=new pb.Handle("",true);
+var pb=require("palmbus"),h=createHandle(pb);
 h.call("luna://com.webos.service.lowlevelstorage/setData",
   JSON.stringify({dbgroups:[{dbid:"factory",items:{contiArea2All:area}}]}))
 .on("response",function(m){
@@ -72,8 +86,8 @@ setTimeout(function(){process.exit(1);},5000);'
 # configd overrides persist through reboot.
 # Settings DB stores user-facing values like country name.
 set_configd_us() {
-    node -e '
-var pb=require("palmbus"),h=new pb.Handle("",true);
+    node -e "$NODE_BOOTSTRAP"'
+var pb=require("palmbus"),h=createHandle(pb);
 h.call("luna://com.webos.service.config/setConfigs",
   JSON.stringify({configs:{"tv.model.languageCountrySel":"US","tv.model.hwSettingGroup":"US","tv.model.continentIndx":10}}))
 .on("response",function(m){console.log("[+] configd: "+m.payload());});
@@ -92,7 +106,7 @@ setTimeout(function(){process.exit(1);},5000);'
 # for other regions are best-effort based on firmware analysis.
 set_configd() {
     AREA="$1"
-    node -e '
+    node -e "$NODE_BOOTSTRAP"'
 var area=parseInt("'"$AREA"'");
 var LC=["NORDIC","NON NORDIC","EAST EU","WEST EU","ETC EU","AJ","JA","IL","TW","CO","PA","CN","HK","KR","US","CA","MX","HN","BR","CL","PE","AR","EC","JP","EU","IR","PH","BW","CS"];
 var HW=["EU","AJ JA IL","TW CO","CN HK","KR","US","SA","JP"];
@@ -103,7 +117,7 @@ var lcName=LC[lc]||"US", hwName=HW[hw]||"US";
 var cc=COUNTRY[lcName]||lcName;
 var lg=LANGGRP[lcName]||"langSel"+lcName;
 console.log("[+] Decoded: ci="+ci+" lang="+lcName+" hw="+hwName+" country="+cc);
-var pb=require("palmbus"),h=new pb.Handle("",true);
+var pb=require("palmbus"),h=createHandle(pb);
 h.call("luna://com.webos.service.config/setConfigs",
   JSON.stringify({configs:{"tv.model.languageCountrySel":lcName,"tv.model.hwSettingGroup":hwName,"tv.model.continentIndx":ci}}))
 .on("response",function(m){console.log("[+] configd: "+m.payload());});
@@ -118,13 +132,13 @@ setTimeout(function(){process.exit(1);},5000);'
 # Reboot via luna service
 reboot_tv() {
     echo "Rebooting TV..."
-    node -e 'var pb=require("palmbus");var h=new pb.Handle("",true);h.call("luna://com.webos.service.sleep/shutdown/machineReboot",JSON.stringify({"reason":"remoteKey"}));setTimeout(function(){process.exit(0);},3000);'
+    node -e "$NODE_BOOTSTRAP"'var pb=require("palmbus");var h=createHandle(pb);h.call("luna://com.webos.service.sleep/shutdown/machineReboot",JSON.stringify({"reason":"remoteKey"}));setTimeout(function(){process.exit(0);},3000);'
 }
 
 # Verify all three layers: NVRAM, factorymanager, configd, settings DB
 verify() {
-    node -e '
-var pb=require("palmbus"),h=new pb.Handle("",true);
+    node -e "$NODE_BOOTSTRAP"'
+var pb=require("palmbus"),h=createHandle(pb);
 h.call("luna://com.webos.service.lowlevelstorage/getData",
   JSON.stringify({dbgroups:[{dbid:"factory",items:["contiArea2All"]}]}))
 .on("response",function(m){console.log("NVRAM:          "+m.payload());});
@@ -147,12 +161,7 @@ setTimeout(function(){process.exit(1);},5000);'
 }
 
 # --- Main ---
-setup_stub
-
 case "$1" in
-    setup)
-        echo "Stub created. Ready to use."
-        ;;
     read)
         read_area
         ;;
@@ -163,14 +172,13 @@ case "$1" in
         reboot_tv
         ;;
     "")
-        echo "Usage: $0 <area_code|read|verify|reboot|setup>"
+        echo "Usage: $0 <area_code|read|verify|reboot>"
         echo ""
         echo "Examples:"
         echo "  $0 read          Read current area option"
         echo "  $0 verify        Verify all region settings"
         echo "  $0 22282         Set area option to US (22282)"
         echo "  $0 reboot        Reboot the TV"
-        echo "  $0 setup         Just create the pmloglib stub"
         echo ""
         echo "Common area codes:"
         echo "  22282 = US  (continentIdx=10, lang=US, hw=US)"

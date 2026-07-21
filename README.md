@@ -57,6 +57,8 @@ ssh -i lg_private.key \
     -p 9922 prisoner@<TV_IP>
 ```
 
+> **webOS 26:** Replace `/tmp` with `/media/developer/temp` in the upload command and the commands below because `/tmp` has `d--x--x--x root root` permissions. See [webos-homebrew-channel issue #234](https://github.com/webosbrew/webos-homebrew-channel/issues/234).
+
 > **Note:** You will be prompted for a passphrase — this is shown on the **Developer Mode app** screen on your TV. It is **case-sensitive**. The `-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa` flags are required because the TV uses the legacy `ssh-rsa` algorithm that newer SSH clients disable by default.
 
 ### 4. Change Region
@@ -83,7 +85,7 @@ sh /tmp/change_region.sh reboot
 
 After reboot, select your country (United States) in **Settings > General > System > Location** if prompted.
 
-> **Note:** The script and pmloglib stub live in `/tmp`, which is cleared on every reboot. You'll need to copy the script again after a reboot if you want to re-run it.
+> **Note:** A script copied to `/tmp` is cleared on every reboot. You'll need to copy the script again after a reboot if you want to re-run it.
 
 ### Verify via EZ-Adjust (optional)
 
@@ -114,12 +116,6 @@ This is normal on first reboot. Go to Settings > General > System > Location and
 - Ensure developer mode is enabled on the TV
 - Use port 9922, not 22
 - Add `-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa` flags
-
-### "Cannot find module 'pmloglib'" error
-Recreate the stub — it's stored in `/tmp` which is cleared on reboot:
-```bash
-sh /tmp/change_region.sh setup
-```
 
 ## Known Area Codes
 
@@ -257,7 +253,6 @@ However, `com.webos.service.lowlevelstorage` provides direct NVRAM read/write ac
 ### Key Technical Details
 
 - **Anonymous palmbus Handle**: `new pb.Handle("", true)` creates an anonymous private-bus client that bypasses luna-service2 identity checks
-- **pmloglib stub**: The webos-service node module requires pmloglib, which isn't available in the prisoner shell. A stub module satisfies the dependency.
 - **lowlevelstorage dbids**: Valid database groups are `system`, `factory`, `micom`, `audio`
 - **Persistence**: NVRAM writes survive reboots, power cycles, and factory resets of software settings
 
@@ -270,7 +265,7 @@ The prisoner shell on webOS is BusyBox-based with several restrictions:
 - **`luna-send-pub`** is available but limited to the public bus — most write operations are blocked.
 - **`strings` command** cannot access binaries in `/usr/sbin/` (not readable by prisoner).
 - **BusyBox `grep`** doesn't support `\|` alternation — use `grep -E 'a|b'` instead.
-- **`/tmp` is tmpfs** — everything in `/tmp` is lost on reboot, including the script and pmloglib stub.
+- **`/tmp` is tmpfs** — everything in `/tmp` is lost on reboot, including the script.
 
 ## Disclaimer
 
