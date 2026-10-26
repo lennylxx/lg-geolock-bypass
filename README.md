@@ -2,11 +2,23 @@
 
 Change the region/area code on LG webOS TVs by writing directly to NVRAM via the `lowlevelstorage` luna service, bypassing the factorymanager's built-in region lock.
 
-**Tested on:** LG OLED77C5PUA, webOS 10.3.0, firmware 33.30.97
+## Verified TVs
+
+| Model | webOS | Firmware | Region change | Source |
+|---|---|---|---|---|
+| OLED77C5PUA | 10.3.0 | 33.30.97 | EU → US | Author |
+| OLED55CS6LA | — | — | → US | [#2](https://github.com/lennylxx/lg-geolock-bypass/issues/2) |
+| Unknown | 26 | 43.11.73 | — | [#4](https://github.com/lennylxx/lg-geolock-bypass/issues/4) |
+| OLED65C1PCB | 6.0 | 03.53.45 | HK → US | [#5](https://github.com/lennylxx/lg-geolock-bypass/issues/5) |
+| OLED55G16LA | — | — | Spain → Peru | [#5](https://github.com/lennylxx/lg-geolock-bypass/issues/5#issuecomment-6420941359) |
+| OLED42C6PCA | 26 | 43.11.71 | Middle East/Africa → China | [#3](https://github.com/lennylxx/lg-geolock-bypass/issues/3), [fork](https://github.com/meglory/lg-geolock-bypass) |
+
+Worked on your TV? Please open an issue with your model, webOS version, and firmware version.
 
 ## Why This Exists
 
-> **WARNING:** If your TV is currently working fine in your region, **do NOT touch the area option in the EZ-Adjust service menu**. Changing it is easy — changing it back is not.
+> [!WARNING]
+> If your TV is currently working fine in your region, **do NOT touch the area option in the EZ-Adjust service menu**. Changing it is easy — changing it back is not.
 
 This project was born out of accidentally changing the area option to EU in the EZ-Adjust service menu on a US TV. The `factorymanager` binary enforces a region lock (geolock) that prevents reverting the area code — even through the same EZ-Adjust menu that was used to change it. This primarily affects the **EU region** — switching to/from other regions like China works fine, but once you land on EU, you're stuck. The TV became geolocked with different app availability, broadcast standards, and region-specific features.
 
@@ -27,6 +39,7 @@ Previously, the only known solution was binary-patching the factorymanager, whic
 4. Enable **Dev Mode Status** (the TV will reboot)
 5. After reboot, re-open Developer Mode and enable **Key Server**
 
+> [!TIP]
 > **If your TV is stuck in EU:** The LG Content Store requires a region-matching LG account to download apps. You may need to temporarily set your TV's country to a specific EU country (e.g., United Kingdom) in Settings, agree to the user agreement, then register a new LG account with a new email address to download the Developer Mode app. Once installed, you can sign into the Developer Mode app with either your new EU or original US LG account.
 
 ### 2. Download the SSH Key
@@ -57,9 +70,11 @@ ssh -i lg_private.key \
     -p 9922 prisoner@<TV_IP>
 ```
 
+> [!IMPORTANT]
 > **webOS 26:** Replace `/tmp` with `/media/developer/temp` in the upload command and the commands below because `/tmp` has `d--x--x--x root root` permissions. See [webos-homebrew-channel issue #234](https://github.com/webosbrew/webos-homebrew-channel/issues/234).
 
-> **Note:** You will be prompted for a passphrase — this is shown on the **Developer Mode app** screen on your TV. It is **case-sensitive**. The `-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa` flags are required because the TV uses the legacy `ssh-rsa` algorithm that newer SSH clients disable by default.
+> [!NOTE]
+> You will be prompted for a passphrase — this is shown on the **Developer Mode app** screen on your TV. It is **case-sensitive**. The `-o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa` flags are required because the TV uses the legacy `ssh-rsa` algorithm that newer SSH clients disable by default.
 
 ### 4. Change Region
 
@@ -85,7 +100,8 @@ sh /tmp/change_region.sh reboot
 
 After reboot, select your country (United States) in **Settings > General > System > Location** if prompted.
 
-> **Note:** A script copied to `/tmp` is cleared on every reboot. You'll need to copy the script again after a reboot if you want to re-run it.
+> [!NOTE]
+> A script copied to `/tmp` is cleared on every reboot. You'll need to copy the script again after a reboot if you want to re-run it.
 
 ### Verify via EZ-Adjust (optional)
 
@@ -148,7 +164,8 @@ Some regions have multiple codes with different hardware setting groups. If unsu
 | Taiwan | TW | 17432 | 24 | 8 (TW) | 4 (KR) |
 | **United States** | **US** | **22282** | **10** | **14 (US)** | **5 (US)** |
 
-> Note: The US code (22282) uses `hwSettingGroup=5 (US)` — the proper US hardware group. Most others in this list use KR hardware group.
+> [!NOTE]
+> The US code (22282) uses `hwSettingGroup=5 (US)` — the proper US hardware group. Most others in this list use KR hardware group.
 
 ## Area Option Encoding
 
