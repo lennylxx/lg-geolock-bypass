@@ -2,6 +2,8 @@
 
 Change the region/area code on LG webOS TVs by writing directly to NVRAM via the `lowlevelstorage` luna service, bypassing the factorymanager's built-in region lock.
 
+**More webOS tools:** [IPTV Player](https://github.com/lennylxx/webos-iptv-player) · [DevMode Forever](https://github.com/lennylxx/lg-devmode-forever) · [IPK Download](https://github.com/lennylxx/lg-ipk-download)
+
 ## Verified TVs
 
 | Model | webOS | Firmware | Region change | Source |
