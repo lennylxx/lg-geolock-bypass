@@ -14,6 +14,7 @@ Change the region/area code on LG webOS TVs by writing directly to NVRAM via the
 | OLED65C1PCB | 6.0 | 03.53.45 | HK → US | [#5](https://github.com/lennylxx/lg-geolock-bypass/issues/5) |
 | OLED55G16LA | — | — | Spain → Peru | [#5](https://github.com/lennylxx/lg-geolock-bypass/issues/5#issuecomment-6420941359) |
 | OLED42C6PCA | 26 | 43.11.71 | Middle East/Africa → China | [#3](https://github.com/lennylxx/lg-geolock-bypass/issues/3), [fork](https://github.com/meglory/lg-geolock-bypass) |
+| 65QNED813RE | 25 | 33.31.75 | Slovakia (EU) → Russia (CS) | [#6](https://github.com/lennylxx/lg-geolock-bypass/issues/6) |
 
 Worked on your TV? Please open an issue with your model, webOS version, and firmware version.
 
