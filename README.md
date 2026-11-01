@@ -4,6 +4,12 @@ Change the region/area code on LG webOS TVs by writing directly to NVRAM via the
 
 **More webOS tools:** [IPTV Player](https://github.com/lennylxx/webos-iptv-player) · [DevMode Forever](https://github.com/lennylxx/lg-devmode-forever) · [IPK Download](https://github.com/lennylxx/lg-ipk-download)
 
+> [!TIP]
+> You don't need to change your TV's region to download apps from another
+> country's store. Use
+> [lg-ipk-download](https://github.com/lennylxx/lg-ipk-download)
+> with `--country` to select the store country or region instead.
+
 ## Verified TVs
 
 | Model | webOS | Firmware | Region change | Source |
