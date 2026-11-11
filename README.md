@@ -21,6 +21,7 @@ Change the region/area code on LG webOS TVs by writing directly to NVRAM via the
 | OLED55G16LA | — | — | Spain → Peru | [#5](https://github.com/lennylxx/lg-geolock-bypass/issues/5#issuecomment-6420941359) |
 | OLED42C6PCA | 26 | 43.11.71 | Middle East/Africa → China | [#3](https://github.com/lennylxx/lg-geolock-bypass/issues/3), [fork](https://github.com/meglory/lg-geolock-bypass) |
 | 65QNED813RE | 25 | 33.31.75 | Slovakia (EU) → Russia (CS) | [#6](https://github.com/lennylxx/lg-geolock-bypass/issues/6) |
+| 55QNED863QA | 22 | 04.60.92 | EU → Russia (CS) | [#7](https://github.com/lennylxx/lg-geolock-bypass/issues/7) |
 
 Worked on your TV? Please open an issue with your model, webOS version, and firmware version.
 
@@ -60,6 +61,9 @@ With Key Server enabled, run on your **computer**:
 wget http://<TV_IP>:9991/webos_rsa -O lg_private.key
 chmod 600 lg_private.key
 ```
+
+> [!NOTE]
+> **Windows:** Save the key under your own user folder (e.g. `C:\Users\<you>`). OpenSSH ignores the key ("UNPROTECTED PRIVATE KEY FILE") if it is in a folder other accounts can access.
 
 ### 3. Copy Script and SSH In
 
@@ -135,7 +139,10 @@ See the [Known Area Codes](#known-area-codes) table for other region codes.
 ## Troubleshooting
 
 ### TV shows "Others" as country after reboot
-This is normal on first reboot. Go to Settings > General > System > Location and manually select United States. The NVRAM value is already correct — the settings UI just needs to be re-synced once.
+This is normal on first reboot, for any target region. Go to **Settings > General > System > Location > LG Services Country** and manually select your target country (e.g. United States, Peru, Russia). The NVRAM value is already correct — the settings UI just needs to be re-synced once.
+
+### `verify` still shows the old area code
+`factorymanager` reads NVRAM at boot, so it shows the old value until the TV restarts. If it still shows the old value after a reboot, unplug the TV for a few minutes and plug it back in.
 
 ### SSH connection refused
 - Ensure developer mode is enabled on the TV

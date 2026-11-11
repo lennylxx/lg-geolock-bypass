@@ -110,7 +110,7 @@ set_configd() {
 var area=parseInt("'"$AREA"'");
 var LC=["NORDIC","NON NORDIC","EAST EU","WEST EU","ETC EU","AJ","JA","IL","TW","CO","PA","CN","HK","KR","US","CA","MX","HN","BR","CL","PE","AR","EC","JP","EU","IR","PH","BW","CS"];
 var HW=["EU","AJ JA IL","TW CO","CN HK","KR","US","SA","JP"];
-var COUNTRY={US:"USA",CA:"CAN",MX:"MEX",BR:"BRA",AR:"ARG",CL:"CHL",PE:"PER",CO:"COL",EC:"ECU",HN:"HND",PA:"PAN",CN:"CHN",HK:"HKG",TW:"TWN",KR:"KOR",JP:"JPN",PH:"PHL",IL:"ISR",EU:"DEU",AJ:"AUS",JA:"ZAF"};
+var COUNTRY={US:"USA",CA:"CAN",MX:"MEX",BR:"BRA",AR:"ARG",CL:"CHL",PE:"PER",CO:"COL",EC:"ECU",HN:"HND",PA:"PAN",CN:"CHN",HK:"HKG",TW:"TWN",KR:"KOR",JP:"JPN",PH:"PHL",IL:"ISR",EU:"DEU",AJ:"AUS",JA:"ZAF",CS:"RUS"};
 var LANGGRP={US:"langSelUS",CA:"langSelUS",MX:"langSelUS",BR:"langSelBR",CN:"langSelCN",HK:"langSelHK",TW:"langSelTW",KR:"langSelKR",JP:"langSelJP",EU:"langSelEU"};
 var ci=area&0x7F, lc=(area>>7)&0x1F, hw=(area>>12)&0xF;
 var lcName=LC[lc]||"US", hwName=HW[hw]||"US";
