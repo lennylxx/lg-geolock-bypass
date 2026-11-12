@@ -210,7 +210,7 @@ python3 calc_area.py 10 14 5
 # Area option: 22282
 ```
 
-See [Language/Country Values](#languagecountry-values-elanguagecountry) and [HW Setting Groups](#hw-setting-groups-ehwsettinggroup) below for valid field values.
+See [Continent Index Values](#continent-index-values-ncontinentidx), [Language/Country Values](#languagecountry-values-elanguagecountry), and [HW Setting Groups](#hw-setting-groups-ehwsettinggroup) below for field values.
 
 Or calculate manually:
 
@@ -223,6 +223,74 @@ continentIdx     = contiArea2All & 0x7F
 languageCountry  = (contiArea2All >> 7) & 0x1F
 hwSettingGroup   = (contiArea2All >> 12) & 0xF
 ```
+
+### Continent Index Values (`nContinentIdx`)
+
+`continentIdx` selects a factory regional feature profile; it is not a continent number or a set of independently selectable flags. Its config key is `tv.model.continentIndx` (note the spelling). The profile presets options such as broadcast features, captions, teletext, hotkeys, and Wi-Fi region settings. `languageCountry` and `hwSettingGroup` are separate fields.
+
+The table below lists known profile indices and labels. The 7-bit field represents **0-127**, but not every value has a defined profile. Available profiles and their feature settings can vary by model and webOS version.
+
+| Value(s) | Firmware profile label(s), in the same order | Region (label meaning) |
+|----------|---------------------------------------------|------------------------|
+| 0, 1, 2 | KR, KR, KR | South Korea |
+| 5, 6 | JP, JP2 | Japan |
+| 10, 14 | US, US2 | United States |
+| 11, 13 | CA, CA2 | Canada |
+| 12 | MX | Mexico |
+| 15 | BR | Brazil |
+| 16 | AR | Argentina |
+| 17 | PE | Peru |
+| 18, 32 | HN, HN | Honduras |
+| 19 | CL | Chile |
+| 20, 83 | PH, PH | Philippines |
+| 21 | BW | Botswana |
+| 22 | EC | Ecuador |
+| 23 | BL | Bolivia |
+| 24 | JM | Jamaica |
+| 30 | TW | Taiwan |
+| 31 | CO | Colombia |
+| 33 | CU | Cuba |
+| 40 | HK | Hong Kong |
+| 45 | CN | China |
+| 50, 60, 67, 69 | DE, DE2, DE3, DE4 | Germany |
+| 51, 61, 70, 71 | UK, UK2, UK3, UK4 | United Kingdom |
+| 52, 62 | IT, IT2 | Italy |
+| 53, 64 | KZ, KZ2 | Kazakhstan |
+| 54, 112 | MA, MA2 | Morocco |
+| 55, 65 | UZ, UZ2 | Uzbekistan |
+| 56, 58, 66, 68 | RU, RU2, RU3, RU4 | Russia |
+| 57, 59 | DZ, DZ2 | Algeria |
+| 63 | TR | Türkiye |
+| 80, 104 | AU, AU2 | Australia |
+| 81 | MM | Myanmar |
+| 82 | ID | Indonesia |
+| 84, 105, 110 | IN, IN2, IN3 | India |
+| 85, 114 | PK, PK2 | Pakistan |
+| 86 | UG | Uganda |
+| 87 | NG | Nigeria |
+| 88 | SA | Saudi Arabia |
+| 89 | EG | Egypt |
+| 90 | MY | Malaysia |
+| 91, 106 | ZA, ZA2 | South Africa |
+| 92 | IQ | Iraq |
+| 93, 107, 108 | AE, AE2, AE3 | United Arab Emirates |
+| 94 | IL | Israel |
+| 95, 115 | TN, TN2 | Tunisia |
+| 96 | JO | Jordan |
+| 97 | NZ | New Zealand |
+| 98, 109 | VN, VN2 | Vietnam |
+| 99 | CM | Cameroon |
+| 100 | IR | Iran |
+| 101 | SG | Singapore |
+| 102 | TH | Thailand |
+| 103 | NP | Nepal |
+| 111 | MD | Moldova |
+| 113 | BD | Bangladesh |
+
+Suffixes such as `2`, `3`, and `4` identify profile variants, not additional countries or a consistent feature level. Different indices can also share the same label. The region column explains the labels, not necessarily the country selected by initial setup. Exact feature settings depend on the model and webOS version.
+
+> [!NOTE]
+> A profile label does not identify the country of an entire area code. For example, the EU/KR example `19461` decodes to index 5 (`JP` profile), language/country 24 (`EU`), and hardware group 4 (`KR`). The Known Area Codes table describes those complete combinations, not a universal index-to-country mapping. Preserve known combinations rather than substituting an index based only on a country name.
 
 ### Language/Country Values (`eLanguageCountry`)
 
